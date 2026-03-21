@@ -6,7 +6,7 @@
 <table id="data"></table>
 
 <script>
-Papa.parse("https://raw.githubusercontent.com/jdotrjs/reclist/refs/heads/pages/list.csv", {
+Papa.parse("https://raw.githubusercontent.com/jdotrjs/reclist/refs/heads/main/list.csv", {
   download: true, header: true, complete: ({ data, meta }) => {
     const cols = meta.fields.map(f => ({ title: f, data: f }));
     $('#data').DataTable({ data, columns: cols });
