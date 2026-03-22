@@ -1,21 +1,110 @@
 <html>
-<link rel="stylesheet" href="https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.min.css">
+<head>
+<link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/2.0.0/js/dataTables.min.js"></script>
+<script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+<style>
+  .store-links { display: inline-flex; gap: 4px; margin-left: 6px; }
+  .store-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; vertical-align: middle;
+    text-decoration: none; opacity: 0.5;
+  }
+
+  .store-link img {
+    width: 14px; height: 14px;
+  }
+  .store-link:hover { opacity: 1; }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    margin: 1px 2px;
+  }
+</style>
+</head>
 
 <body>
-  <table id="data"></table>
+  <div id="data"></div>
 </body>
 
-<script defer="true">
-Papa.parse("https://raw.githubusercontent.com/jdotrjs/reclist/refs/heads/main/list.csv?ts=" + new Date().getTime(), {
-  download: true, header: true, complete: ({ data, meta }) => {
-    const cleanData = data.filter(r => r.Game)
-    const cols = meta.fields.map(f => ({ title: f, data: f }))
-    $('#data').DataTable({ data: cleanData, columns: cols });
+<script>
+  const storeIcons = {
+    steam: "icons/steam.svg",
+    gog: "icons/gog.svg",
+    epic: "icons/epic.svg",
+    itch: "icons/itch.svg",
+  };
+
+  const colorFor = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const hue = ((hash % 360) + 360) % 360;
+    return `hsl(${hue}, 50%, 88%)`;
   }
-});
+
+  const pillFormatter = (cell) => {
+    const val = cell.getValue();
+    if (!val) return "";
+    return val.split(",").map(v => v.trim()).filter(Boolean)
+      .map(v => `<span class="pill" style="background:${colorFor(v)}">${v}</span>`)
+      .join(" ");
+  }
+
+  const nameFormatter = (cell) => {
+    const name = cell.getValue();
+    const linkData = cell.getRow().getData().Link || "";
+    let links = "";
+    if (linkData) {
+      const parts = linkData.split("$|$").map(p => p.trim()).filter(Boolean);
+      links = parts.map(part => {
+        const idx = part.indexOf(":");
+        const store = part.substring(0, idx).toLowerCase();
+        const url = part.substring(idx + 1);
+        const iconSrc = storeIcons[store];
+        const icon = iconSrc
+          ? `<img src="${iconSrc}" alt="${store}">`
+          : store;
+        return `<a class="store-link" href="${url}" target="_blank" rel="noopener" title="${store}">${icon}</a>`;
+      }).join("");
+      links = `<span class="store-links">${links}</span>`;
+    }
+
+    return `<span>
+        <span>${name}</span>
+        ${links}
+      </span>`;
+  }
+
+  const textFormatter = (cell) => `<span>${cell.getValue()}</span>`;
+
+  const test = false;
+  const dataSrc = test
+    ? "test-data.csv"
+    : "https://raw.githubusercontent.com/jdotrjs/reclist/refs/heads/main/list.csv?" + new Date().getTime();
+
+  Papa.parse(dataSrc, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: ({ data }) => {
+      const cols = [
+        { title: "Game", field: "Game", width: "15%", formatter: nameFormatter, htmlOutput: true },
+        { title: "Genre", field: "Genre", width: "15%", formatter: pillFormatter, htmlOutput: true },
+        { title: "Notes", field: "Notes", width: "60%", formatter: textFormatter, htmlOutput: true },
+        { title: "Rec by", field: "Rec by", width: "10%", formatter: pillFormatter, htmlOutput: true },
+      ];
+      new Tabulator("#data", {
+        data,
+        columns: cols,
+        layout: "fitColumns",
+      });
+    }
+  });
 </script>
 
 </html>
