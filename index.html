@@ -1,15 +1,21 @@
+<html>
 <link rel="stylesheet" href="https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.min.css">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.0.0/js/dataTables.min.js"></script>
 
-<table id="data"></table>
+<body>
+  <table id="data"></table>
+</body>
 
-<script>
-Papa.parse("https://raw.githubusercontent.com/jdotrjs/reclist/refs/heads/main/list.csv", {
+<script defer="true">
+Papa.parse("https://raw.githubusercontent.com/jdotrjs/reclist/refs/heads/main/list.csv?ts=" + new Date().getTime(), {
   download: true, header: true, complete: ({ data, meta }) => {
-    const cols = meta.fields.map(f => ({ title: f, data: f }));
-    $('#data').DataTable({ data, columns: cols });
+    const cleanData = data.filter(r => r.Game)
+    const cols = meta.fields.map(f => ({ title: f, data: f }))
+    $('#data').DataTable({ data: cleanData, columns: cols });
   }
 });
 </script>
+
+</html>
